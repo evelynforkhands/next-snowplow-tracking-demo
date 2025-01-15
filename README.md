@@ -85,7 +85,7 @@ export default function trackPageView(pageView: PageView) {
 }
 ```
 
-## 🟡 Track pageViews server-side using middleware (you are here!)
+## ✅ Track pageViews server-side using middleware
 
 To implement server-side tracking, we will use a custom middleware that will track pageViews on every request. Analytics is a common [use case for middleware.](https://nextjs.org/docs/app/building-your-application/routing/middleware)
 
@@ -119,3 +119,30 @@ Now every page view for blog articles will be tracked server-side.
 We can browse all event data in the Snowplow Micro UI at `http://localhost:9090/micro/ui`.
 
 ![alt text](images/pageview.png)
+
+## 🟡 Set useragent from client
+
+(you are here!)
+Notice that the user agent is set to "Next.js Middleware" in the event data.
+
+![useragent set to "Next.js Middleware"](images/useragent.png)
+
+Let's set the user agent to the actual user agent of the client in the middleware.
+
+### 2. Set the user agent in the middleware
+
+Let's set up a new method in `lib/snowplow/setUserProperties.ts` to set user properties, we can in the future set more user properties when needed.
+
+```ts
+import tracker from "../tracker";
+
+interface UserProperties {
+    userAgent?: string;
+}
+
+export function setUserProperties(userProperties: UserProperties) {
+    tracker.setUseragent(userProperties.userAgent ?? "");
+}
+```
+
+Notice that we are setting the user agent to an empty string if it's not provided - this is to avoid sending `Next.js Middleware`, or any other useragents that might confuse you later on as the user agent. Plus arguably, that would be a waste of storage unless we have a use case for it.
