@@ -1,3 +1,6 @@
+"use client";
+import trackSelfDescribingEvent from 'lib/snowplow/trackCustomEvent'
+import LinkClick, { LINK_CLICK_SCHEMA } from 'lib/snowplow/types/linkClick'
 import Link from 'next/link'
 
 const navItems = {
@@ -10,6 +13,19 @@ const navItems = {
   'https://vercel.com/templates/next.js/portfolio-starter-kit': {
     name: 'deploy',
   },
+}
+function handleLinkClick(
+  { targetUrl, elementContent }: { targetUrl: string, elementContent: string }
+) {
+  const linkClickEvent: LinkClick = {
+    schema: LINK_CLICK_SCHEMA,
+    data: {
+      targetUrl,
+      elementContent,
+    },
+  };
+
+  trackSelfDescribingEvent(linkClickEvent);
 }
 
 export function Navbar() {
@@ -27,6 +43,7 @@ export function Navbar() {
                   key={path}
                   href={path}
                   className="transition-all hover:text-neutral-800 dark:hover:text-neutral-200 flex align-middle relative py-1 px-2 m-1"
+                  onClick={() => handleLinkClick({ targetUrl: path, elementContent: name })}
                 >
                   {name}
                 </Link>

@@ -120,9 +120,8 @@ We can browse all event data in the Snowplow Micro UI at `http://localhost:9090/
 
 ![alt text](images/pageview.png)
 
-## 🟡 Set useragent from client
+## ✅ Set useragent from client
 
-(you are here!)
 Notice that the user agent is set to "Next.js Middleware" in the event data.
 
 ![useragent set to "Next.js Middleware"](images/useragent.png)
@@ -146,3 +145,7 @@ export function setUserProperties(userProperties: UserProperties) {
 ```
 
 Notice that we are setting the user agent to an empty string if it's not provided - this is to avoid sending `Next.js Middleware`, or any other useragents that might confuse you later on as the user agent. Plus arguably, that would be a waste of storage unless we have a use case for it.
+
+## 🟡 Track a custom event (you are here!)
+
+Let's track a custom event when a user clicks on an external link. We will track the event `link_click` from Iglu Central. We will also set up a type for this event.
