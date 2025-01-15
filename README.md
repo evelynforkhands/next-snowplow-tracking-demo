@@ -1,10 +1,11 @@
 # A starter Next.JS app from portfolio-starter-kit to demo tracking with Snowplow
+
 ## ✅ Preprequisites
 
-- Node.js
-- pnpm
+-   Node.js
+-   pnpm
 
-## ✅ Setup template 
+## ✅ Setup template
 
 ### 1. Clone and enter the project
 
@@ -26,7 +27,7 @@ pnpm dev
 
 Now you have a blog with some example posts! You can view the blog at `http://localhost:3000`.
 
-## 🟡 Setup Snowplow node tracker & prepare types (you are here!)
+## ✅ Setup Snowplow node tracker & prepare types
 
 ### 1. Install Snowplow tracker
 
@@ -39,25 +40,28 @@ pnpm add @snowplow/node-tracker
 Let's create a new file `lib/snowplow.ts` where we will initialize the Snowplow tracker.
 
 ```ts
-import { newTracker } from '@snowplow/node-tracker';
+import { newTracker } from "@snowplow/node-tracker";
 
-const tracker = newTracker({
-    namespace: "blog-tracker", 
-    appId: "blog",
-    encodeBase64: false, 
-  }, {
-    endpoint: "http://localhost", 
-    port: 9090, // for local dev - to talk to Snowplow Micro
-    eventMethod: "post", 
-    bufferSize: 1, // only send events once n are buffered
-  });
-
+const tracker = newTracker(
+    {
+        namespace: "blog-tracker",
+        appId: "blog",
+        encodeBase64: false,
+    },
+    {
+        endpoint: "http://localhost",
+        port: 9090, // for local dev - to talk to Snowplow Micro
+        eventMethod: "post",
+        bufferSize: 1, // only send events once n are buffered
+    }
+);
 
 export default tracker;
 ```
 
 ### 3. Prepare types
-First, we're going to track some pageViews, let's set up a type for that at `lib/snowplow/types/pageView.ts` to follow the format of the Snowplow pageView event https://docs.snowplow.io/docs/sources/trackers/javascript-trackers/node-js-tracker/node-js-tracker-v4/tracking-events/#track-pageviews-withbuildpageview 
+
+First, we're going to track some pageViews, let's set up a type for that at `lib/snowplow/types/pageView.ts` to follow [the format of the Snowplow pageView event.](https://docs.snowplow.io/docs/sources/trackers/javascript-trackers/node-js-tracker/node-js-tracker-v4/tracking-events/#track-pageviews-withbuildpageview)
 
 ```ts
 interface PageView {
@@ -77,6 +81,41 @@ import { buildPageView } from "@snowplow/node-tracker";
 import PageView from "./types/pageView";
 
 export default function trackPageView(pageView: PageView) {
-  tracker.track(buildPageView(pageView));
+    tracker.track(buildPageView(pageView));
 }
 ```
+
+## 🟡 Track pageViews server-side using middleware (you are here!)
+
+To implement server-side tracking, we will use a custom middleware that will track pageViews on every request. Analytics is a common [use case for middleware.](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+
+### 1. Create middleware to track pageViews
+
+Let's create a new file `middleware.ts` in the root of our project where we will track pageViews on every request.
+For now, let's just track pageViews for blog articles by matching the path `/blog/:path*`. Read more about matchers [here](https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher).
+
+```ts
+import trackPageView from "lib/snowplow/trackPageView";
+import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+    trackPageView({
+        pageUrl: request.url,
+        referrer: request.headers.get("referer") || undefined,
+    });
+    return NextResponse.next();
+}
+
+export const config = {
+    matcher: "/blog/:path*",
+};
+```
+
+Now every page view for blog articles will be tracked server-side.
+
+![alt text](images/events-graph.png)
+
+We can browse all event data in the Snowplow Micro UI at `http://localhost:9090/micro/ui`.
+
+![alt text](images/pageview.png)
